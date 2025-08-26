@@ -120,36 +120,64 @@ echo -e "${COL_GREEN} └──────────────────�
 echo -e "${COL_GREEN} ┌─────────────────────────────┐"
 echo -e "${COL_GREEN} │ Creazione Utente Postgresql │"
 echo -e "${COL_GREEN} └─────────────────────────────┘"
+echo
 
 	sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD '$DB' SUPERUSER;"
 
 echo -e "${COL_GREEN} ┌──────────────────┐"
 echo -e "${COL_GREEN} │ Creazione DB KAV │"
 echo -e "${COL_GREEN} └──────────────────┘"
+echo
 
 	sudo -u ksc createdb KAV
+	
+	
+# Genera il file di risposte
+cat <<EOF > /tmp/ksc_install/answers.txt
+EULA_ACCEPTED=1
+PP_ACCEPTED=1
+KLSRV_UNATT_SERVERADDRESS=127.0.0.1
+KLSRV_UNATT_DBMS_TYPE=postgresql
+KLSRV_UNATT_DBMS_INSTANCE=127.0.0.1
+KLSRV_UNATT_DBMS_PORT=5432
+KLSRV_UNATT_DB_NAME=KAV
+KLSRV_UNATT_DBMS_LOGIN=ksc
+KLSRV_UNATT_DBMS_PASSWORD=$DB_PASSWORD
+KLSRV_UNATT_KLADMINSGROUP=kladmins
+KLSRV_UNATT_KLSRVUSER=ksc
+KLSRV_UNATT_KLSVCUSER=ksc
+EOF
+
+# Esporta la variabile d'ambiente
+export KLAUTOANSWERS=/tmp/ksc_install/answers.txt
+echo "✅ Variabile KLAUTOANSWERS esportata."
 
 echo -e "${COL_GREEN} ┌──────────────┐"
 echo -e "${COL_GREEN} │ Download KSC │"
 echo -e "${COL_GREEN} └──────────────┘"
+echo
 
 	wget -P /tmp/ https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8873/english-24733053-en/3939393939367c44454c7c31/ksc64_15.4.0-8873_amd64.deb
 
 echo -e "${COL_GREEN} ┌───────────────────┐"
 echo -e "${COL_GREEN} │ Installazione KSC │"
 echo -e "${COL_GREEN} └───────────────────┘"
+echo
 
 	sudo apt install /tmp/ksc64_15.4.0-8873_amd64.deb
 
-echo -e "${COL_GREEN} ┌────────────────────┐"
-echo -e "${COL_GREEN} │ Configurazione KSC │"
-echo -e "${COL_GREEN} └────────────────────┘"
-
-	sudo /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl
+#echo -e "${COL_GREEN} ┌────────────────────┐"
+#echo -e "${COL_GREEN} │ Configurazione KSC │"
+#echo -e "${COL_GREEN} └────────────────────┘"
+#
+#	sudo /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl
 	
 	
 	
-	
+echo -e "${COL_GREEN} ┌───────────────────────────────────┐"
+echo -e "${COL_GREEN} │ Creazione File Config Web Console │"
+echo -e "${COL_GREEN} └───────────────────────────────────┘"
+echo	
 	# Define the file path
 FILE_PATH="/etc/ksc-web-console-setup.json"
 
@@ -165,7 +193,16 @@ EOF
 
 echo "File $FILE_PATH creato con successo."
 
+echo -e "${COL_GREEN} ┌──────────────────────┐"
+echo -e "${COL_GREEN} │ Download Web Console │"
+echo -e "${COL_GREEN} └──────────────────────┘"
+echo
 wget -P /tmp/ https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8952/english-25132578-en/313031343938397c44454c7c31/ksc-web-console-15.4.1021.x86_64.deb
+
+echo -e "${COL_GREEN} ┌───────────────────────────┐"
+echo -e "${COL_GREEN} │ Installazione Web Console │"
+echo -e "${COL_GREEN} └───────────────────────────┘"
+echo
 
 sudo dpkg -i /tmp/ksc-web-console-15.4.1021.x86_64.deb
 
