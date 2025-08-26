@@ -1,3 +1,24 @@
+#!/bin/bash
+
+# Se il file della tabella dei colori esiste,
+if [[ -f "${coltable}" ]]; then
+    # includilo
+    # shellcheck source="./advanced/Scripts/COL_TABLE"
+    source "${coltable}"
+# Altrimenti,
+else
+    # Imposta questi valori in modo che lo script possa ancora essere eseguito a colori
+    COL_NC='\033[0m'    # No Color
+    COL_GREEN='\033[0;32m' # Verde
+    COL_BLUE='\033[0;34m'  # Blu
+    COL_RED='\033[0;31m'   # Rosso
+    TICK="[${COL_GREEN}✓${COL_NC}]"
+    CROSS="[${COL_RED}✗${COL_NC}]"
+    INFO="[${COL_BLUE}i${COL_NC}]"
+    OVER="\\r\\033[K"
+fi
+
+
 echo ""
 echo -e "${COL_BLUE}  .                                                ***                                               "
 echo -e "${COL_BLUE}    *************************:                     *******           **********************          "
@@ -41,8 +62,21 @@ echo ""
 
 
 
-
+echo -e "${COL_GREEN}
+echo -e "${COL_GREEN} *** Aggiornamento Sistema Operativo ***"
 
 sudo apt update
 sudo apt upgrade
 
+echo -e "${COL_GREEN} *** Installazione Postgresql ***"
+
+
+echo -e "${COL_GREEN} *** Ottimizzazione configurazione Postgresql ***"
+
+echo -e "${COL_GREEN} *** Creazione Utente ksc ***"
+
+echo -e "${COL_GREEN} *** Creazione Utente Postgresql ***"
+
+echo -e "${COL_GREEN} *** Creazione DB KAV ***"
+
+echo -e "${COL_GREEN} *** Download KSC ***"
