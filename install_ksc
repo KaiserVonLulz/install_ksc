@@ -46,12 +46,12 @@ echo "     ***********************           **********************.          :*
 echo "       *******************               ******************:              -******************        "
 echo "          +************                     ************-                    -************           "
 echo "              .                                                                                      " 
-echo ""
+echo -e "${COL_WHITE}"
 echo ""
 echo "              ______ _                 _                                  _____ _______ "
 echo "             |  ____| |               | |                                |_   _|__   __|"
 echo "             | |__  | | _____   ____ _| |_ ___   _   _  ___  _   _ _ __    | |    | |   "
-echo "             |  __| | |/ _ \ \ / / _` | __/ _ \ | | | |/ _ \| | | | '__|   | |    | |   "
+echo "             |  __| | |/ _ \ \ / / _` | __/ _ \ | | | |/ _ \| | | | .__|   | |    | |   "
 echo "             | |____| |  __/\ V / (_| | | | __/ | |_| | (_) | |_| | |     _| |_   | |   "
 echo "             |______|_|\___| \_/ \__,_|\__\___|  \__, |\___/ \__,_|_|    |_____|  |_|   "
 echo "                                                  __/ |                                 "
@@ -69,6 +69,24 @@ fi
 echo "✅ Esecuzione come root confermata."
 
 
+
+
+# Chiede la password del database in modo interattivo
+echo -n "🔐 Inserisci la password dell'utente ksc: "
+read -s KSC_PASSWORD
+echo ""
+# Chiede la password del database in modo interattivo
+echo -n "🔐 Inserisci la password del database PostgreSQL: "
+read -s DB_PASSWORD
+echo ""
+
+
+
+
+
+
+
+
 echo -e "${COL_GREEN} ┌─────────────────────────────────┐"
 echo -e "${COL_GREEN} │ Aggiornamento Sistema Operativo │"
 echo -e "${COL_GREEN} └─────────────────────────────────┘"
@@ -79,7 +97,7 @@ echo -e "${COL_GREEN} ┌──────────────────�
 echo -e "${COL_GREEN} │ Installazione Postgresql │"
 echo -e "${COL_GREEN} └──────────────────────────┘"
 
-	apt install postgresql
+	apt install postgresql -y
 
 echo -e "${COL_GREEN} ┌──────────────────────────────────────────┐"
 echo -e "${COL_GREEN} │ Ottimizzazione configurazione Postgresql │"
@@ -91,15 +109,19 @@ echo -e "${COL_GREEN} ┌──────────────────�
 echo -e "${COL_GREEN} │ Creazione Utente ksc │"
 echo -e "${COL_GREEN} └──────────────────────┘"
 
-	sudo adduser ksc
-	sudo groupadd kladmins
+	sudo useradd -m -s /bin/bash "ksc"
+	echo "ksc:$KSC_PASSWORD" | sudo chpasswd
 	sudo usermod -g kladmins ksc
+	
+	#sudo adduser ksc
+	#sudo groupadd kladmins
+	#sudo usermod -g kladmins ksc
 
 echo -e "${COL_GREEN} ┌─────────────────────────────┐"
 echo -e "${COL_GREEN} │ Creazione Utente Postgresql │"
 echo -e "${COL_GREEN} └─────────────────────────────┘"
 
-	sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD 'test' SUPERUSER;"
+	sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD '$DB' SUPERUSER;"
 
 echo -e "${COL_GREEN} ┌──────────────────┐"
 echo -e "${COL_GREEN} │ Creazione DB KAV │"
