@@ -67,11 +67,11 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "✅ Esecuzione come root confermata."
+echo ""
+echo ""
 
 
-
-
-# Chiede la password del database in modo interattivo
+# Chiede la password dell'utente ksc
 echo -n "🔐 Inserisci la password dell'utente ksc: "
 read -s KSC_PASSWORD
 echo ""
@@ -79,6 +79,17 @@ echo ""
 echo -n "🔐 Inserisci la password del database PostgreSQL: "
 read -s DB_PASSWORD
 echo ""
+echo ""
+echo " *** Configurazione Web Console ***"
+# Chiede la password del database in modo interattivo
+echo -n "🔐 Inserisci l'utente amministratore (Default Administrator): "
+read $WEB_USER
+echo ""
+# Chiede la password del database in modo interattivo
+echo -n "🔐 Inserisci la password per l'utente $WEB_USER: "
+read -s WEB_PASSWORD
+echo ""
+
 
 
 
@@ -174,6 +185,11 @@ echo
 	
 	
 	
+# Crea l'utente per la Web Console
+echo "🔐 Creazione utente Web Console 'ksc'..."
+/opt/kaspersky/ksc64/sbin/kladduser -n ksc -p "$KSC_PASSWORD"
+
+	
 echo -e "${COL_GREEN} ┌───────────────────────────────────┐"
 echo -e "${COL_GREEN} │ Creazione File Config Web Console │"
 echo -e "${COL_GREEN} └───────────────────────────────────┘"
@@ -205,4 +221,13 @@ echo -e "${COL_GREEN} └──────────────────�
 echo
 
 sudo dpkg -i /tmp/ksc-web-console-15.4.1021.x86_64.deb
+
+
+echo -e "${COL_GREEN} Installazione Terminata!"
+echo -e "${COL_GREEN} Vai su https://$IP:8080 per accedere alla Web Console"
+echo
+echo "Login: $WEB_USER"
+echo "Password: $WEB_PASSWORD"
+
+echo "Installazione Terminata con successo!"
 
