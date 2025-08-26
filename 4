@@ -1,0 +1,218 @@
+#!/bin/bash
+
+# Define the log file path
+LOG_FILE="/var/log/ksc_install.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Show ASCII art splash
+curl -sSl https://raw.githubusercontent.com/KaiserVonLulz/install_ksc/refs/heads/main/splash | bash
+
+# Check for root
+if [ "$EUID" -ne 0 ]; then
+  echo "❌ Questo script deve essere eseguito come root."
+  exit 1
+fi
+echo "✅ Esecuzione come root confermata."
+
+# --- Modifica: Leggi la configurazione da un file ---
+CONFIG_FILE="ksc_config.conf"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "❌ File di configurazione '$CONFIG_FILE' non trovato."
+    echo "❌ Creare il file e inserire i parametri richiesti."
+    echo "❌ Esempio di contenuto:"
+    echo "KSC_PASSWORD=\"la_tua_password_ksc\""
+    echo "DB_PASSWORD=\"la_tua_password_db\""
+    echo "WEB_USER=\"il_tuo_utente_web\""
+    echo "WEB_PASSWORD=\"la_tua_password_web\""
+    exit 1
+fi
+
+echo "✅ File di configurazione trovato. Caricamento parametri..."
+source "$CONFIG_FILE"
+
+# Valida che le variabili non siano vuote dopo il caricamento
+if [ -z "$KSC_PASSWORD" ] || [ -z "$DB_PASSWORD" ] || [ -z "$WEB_USER" ] || [ -z "$WEB_PASSWORD" ]; then
+    echo "❌ Tutti i campi nel file di configurazione sono obbligatori!"
+    exit 1
+fi
+
+echo ""
+echo "=== CONFIGURAZIONE KASPERSKY SECURITY CENTER ==="
+echo "✅ Configurazione letta correttamente. Avvio installazione..."
+echo ""
+
+# Resto dello script rimane invariato
+# ...
+
+# Create user and group
+groupadd -f kladmins
+if ! id -u ksc &>/dev/null; then
+    useradd -m -s /bin/bash ksc
+fi
+echo "ksc:$KSC_PASSWORD" | chpasswd
+usermod -a -G kladmins ksc
+echo "✅ Utente e gruppo ksc/kladmins creati."
+
+# Install PostgreSQL
+echo "📦 Installazione PostgreSQL..."
+apt update && apt install postgresql postgresql-contrib -y
+if [ $? -ne 0 ]; then
+    echo "❌ Errore installazione PostgreSQL";
+    exit 1;
+fi
+
+# Start and enable PostgreSQL
+systemctl start postgresql
+systemctl enable postgresql
+echo "✅ PostgreSQL installato e avviato."
+
+# Configure PostgreSQL
+echo "🗃️ Configurazione database..."
+sleep 5
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS KAV;" 2>/dev/null
+sudo -u postgres psql -c "DROP USER IF EXISTS ksc;" 2>/dev/null
+sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD '$DB_PASSWORD' CREATEDB CREATEROLE;"
+if [ $? -ne 0 ]; then
+    echo "❌ Errore creazione utente PostgreSQL";
+    exit 1;
+fi
+sudo -u postgres createdb -O ksc KAV
+if [ $? -ne 0 ]; then
+    echo "❌ Errore creazione database KAV";
+    exit 1;
+fi
+echo "✅ Database PostgreSQL configurato."
+
+# Create installation directory
+mkdir -p /tmp/ksc_install
+cd /tmp/ksc_install
+
+# Create answers.txt with proper configuration
+cat <<EOF > /tmp/ksc_install/answers.txt
+EULA_ACCEPTED=1
+PP_ACCEPTED=1
+KLSRV_UNATT_SERVERADDRESS=127.0.0.1
+KLSRV_UNATT_DBMS_TYPE=postgresql
+KLSRV_UNATT_DBMS_INSTANCE=127.0.0.1
+KLSRV_UNATT_DBMS_PORT=5432
+KLSRV_UNATT_DB_NAME=KAV
+KLSRV_UNATT_DBMS_LOGIN=ksc
+KLSRV_UNATT_DBMS_PASSWORD=$DB_PASSWORD
+KLSRV_UNATT_KLADMINSGROUP=kladmins
+KLSRV_UNATT_KLSRVUSER=ksc
+KLSRV_UNATT_KLSVCUSER=ksc
+KLSRV_UNATT_FORCE_RECONF=1
+EOF
+export KLAUTOANSWERS=/tmp/ksc_install/answers.txt
+echo "✅ File answers.txt creato e variabile KLAUTOANSWERS esportata."
+
+# Download KSC package
+echo "📥 Download Kaspersky Security Center..."
+wget -O ksc64.deb https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8873/english-24733053-en/3939393939367c44454c7c31/ksc64_15.4.0-8873_amd64.deb
+if [ ! -f "ksc64.deb" ]; then
+    echo "❌ Errore durante il download di KSC"
+    exit 1
+fi
+echo "✅ Download completato."
+
+# Install dependencies first
+echo "📦 Installazione dipendenze..."
+apt install -f -y
+systemctl stop klactprx_srv 2>/dev/null
+systemctl stop klnagent_srv 2>/dev/null
+systemctl stop kladminserver_srv 2>/dev/null
+echo "🔧 Installazione Kaspersky Security Center..."
+echo "   Questo processo potrebbe richiedere alcuni minuti..."
+export DEBIAN_FRONTEND=noninteractive
+dpkg -i ksc64.deb
+INSTALL_RESULT=$?
+if [ $INSTALL_RESULT -ne 0 ]; then
+    echo "⚠️ Tentativo di correzione dipendenze..."
+    apt-get install -f -y
+    if [ $? -eq 0 ]; then
+        echo "✅ Dipendenze corrette, installazione KSC completata."
+    else
+        echo "❌ Errore installazione KSC - controllare i log"
+        exit 1
+    fi
+else
+    echo "✅ KSC installato con successo."
+fi
+
+# Wait for services to start
+echo "⏳ Attesa avvio servizi KSC..."
+sleep 10
+if ! systemctl is-active --quiet kladminserver_srv; then
+    echo "🔄 Avvio servizio kladminserver_srv..."
+    systemctl start kladminserver_srv
+    sleep 5
+fi
+
+# Create Web Console user
+echo "👤 Creazione utente Web Console..."
+/opt/kaspersky/ksc64/sbin/kladduser -n "$WEB_USER" -p "$WEB_PASSWORD"
+if [ $? -ne 0 ]; then
+    echo "❌ Errore creazione utente Web Console";
+    exit 1;
+fi
+echo "✅ Utente Web Console creato."
+
+# Create Web Console config
+cat <<EOF > /etc/ksc-web-console-setup.json
+{
+  "address": "0.0.0.0",
+  "port": 8080,
+  "trusted": "127.0.0.1|13299|/var/opt/kaspersky/klnagent_srv/1093/cert/klserver.cer|KSC Server",
+  "acceptEula": true
+}
+EOF
+echo "✅ File di configurazione Web Console creato."
+
+# Download and install Web Console
+echo "📥 Download Web Console..."
+wget -O ksc-web-console.deb https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8952/english-25132578-en/313031343938397c44454c7c31/ksc-web-console-15.4.1021.x86_64.deb
+if [ ! -f "ksc-web-console.deb" ]; then
+    echo "❌ Errore durante il download della Web Console"
+    exit 1
+fi
+echo "🔧 Installazione Web Console..."
+dpkg -i ksc-web-console.deb
+if [ $? -ne 0 ]; then
+    echo "⚠️ Tentativo di correzione dipendenze Web Console..."
+    apt-get install -f -y
+    if [ $? -ne 0 ]; then
+        echo "❌ Errore installazione Web Console";
+        exit 1;
+    fi
+fi
+
+# Start Web Console service
+systemctl enable ksc-web-console
+systemctl start ksc-web-console
+sleep 5
+
+# Final message
+IP=$(hostname -I | awk '{print $1}')
+echo ""
+echo "🎉 ==============================================="
+echo "     INSTALLAZIONE COMPLETATA CON SUCCESSO!"
+echo "==============================================="
+echo ""
+echo "🌐 Accedi alla Web Console: http://$IP:8080"
+echo "👤 Utente: $WEB_USER"
+echo "🔐 Password: [NASCOSTA]"
+echo ""
+echo "📋 Informazioni aggiuntive:"
+echo "   - Utente KSC: ksc"
+echo "   - Database: PostgreSQL (KAV)"
+echo "   - Log installazione: $LOG_FILE"
+echo ""
+echo "⚠️  Nota: Attendi 1-2 minuti prima del primo accesso"
+echo "    per permettere l'inizializzazione dei servizi."
+echo ""
+
+# Cleanup temporary files
+rm -f /tmp/ksc_install/*.deb
+rm -f /tmp/ksc_install/answers.txt
+echo "✅ Pulizia file temporanei completata."
