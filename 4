@@ -117,17 +117,17 @@ fi
 echo "✅ Download completato."
 
 # Install dependencies first
-echo "sleep 120"
-sleep 120
+echo "sleep 10"
+sleep 10
 echo "📦 Installazione dipendenze..."
-apt install -f -y
-systemctl stop klactprx_srv 2>/dev/null
-systemctl stop klnagent_srv 2>/dev/null
-systemctl stop kladminserver_srv 2>/dev/null
+# apt install -f -y
+# systemctl stop klactprx_srv 2>/dev/null
+# systemctl stop klnagent_srv 2>/dev/null
+# systemctl stop kladminserver_srv 2>/dev/null
 echo "🔧 Installazione Kaspersky Security Center..."
 echo "   Questo processo potrebbe richiedere alcuni minuti..."
 export DEBIAN_FRONTEND=noninteractive
-dpkg -i ksc64.deb
+apt install ksc64.deb
 INSTALL_RESULT=$?
 if [ $INSTALL_RESULT -ne 0 ]; then
     echo "⚠️ Tentativo di correzione dipendenze..."
