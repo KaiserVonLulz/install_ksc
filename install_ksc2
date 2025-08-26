@@ -1,0 +1,123 @@
+#!/bin/bash
+
+LOG_FILE="/var/log/ksc_install.log"
+ANSWER_FILE="/tmp/ksc_install/answers.txt"
+WEB_CONFIG_FILE="/etc/ksc-web-console-setup.json"
+KSC_DEB="/tmp/ksc64_15.4.0-8873_amd64.deb"
+WEB_DEB="/tmp/ksc-web-console-15.4.1021.x86_64.deb"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        log "ERROR: This script must be run as root."
+        exit 1
+    fi
+}
+
+create_users_and_groups() {
+    log "Creating user and group..."
+    groupadd -f kladmins
+    id -u ksc &>/dev/null || useradd -m -s /bin/bash -g kladmins ksc
+    echo "ksc:$KSC_PASSWORD" | chpasswd
+}
+
+install_postgresql() {
+    log "Installing PostgreSQL..."
+    apt update && apt install postgresql -y
+}
+
+optimize_postgresql() {
+    log "Optimizing PostgreSQL configuration..."
+    PG_CONF="/etc/postgresql/$(ls /etc/postgresql)/main/postgresql.conf"
+    sed -i 's/#shared_buffers = .*/shared_buffers = 512MB/' "$PG_CONF"
+    sed -i 's/#work_mem = .*/work_mem = 64MB/' "$PG_CONF"
+    sed -i 's/#maintenance_work_mem = .*/maintenance_work_mem = 128MB/' "$PG_CONF"
+    sed -i 's/#effective_cache_size = .*/effective_cache_size = 2GB/' "$PG_CONF"
+    systemctl restart postgresql
+}
+
+setup_database() {
+    log "Setting up PostgreSQL user and database..."
+    sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD '$DB_PASSWORD' SUPERUSER;" || true
+    sudo -u postgres createdb -O ksc KAV
+}
+
+generate_answers_file() {
+    log "Generating answers file..."
+    mkdir -p "$(dirname "$ANSWER_FILE")"
+    cat <<EOF > "$ANSWER_FILE"
+EULA_ACCEPTED=1
+PP_ACCEPTED=1
+KLSRV_UNATT_SERVERADDRESS=127.0.0.1
+KLSRV_UNATT_DBMS_TYPE=postgresql
+KLSRV_UNATT_DBMS_INSTANCE=127.0.0.1
+KLSRV_UNATT_DBMS_PORT=5432
+KLSRV_UNATT_DB_NAME=KAV
+KLSRV_UNATT_DBMS_LOGIN=ksc
+KLSRV_UNATT_DBMS_PASSWORD=$DB_PASSWORD
+KLSRV_UNATT_KLADMINSGROUP=kladmins
+KLSRV_UNATT_KLSRVUSER=ksc
+KLSRV_UNATT_KLSVCUSER=ksc
+EOF
+    export KLAUTOANSWERS="$ANSWER_FILE"
+}
+
+download_and_install_ksc() {
+    log "Downloading and installing KSC..."
+    wget -O "$KSC_DEB" "https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8873/english-24733053-en/3939393939367c44454c7c31/ksc64_15.4.0-8873_amd64.deb"
+    apt install "$KSC_DEB" -y
+}
+
+create_web_user() {
+    log "Creating Web Console user..."
+    /opt/kaspersky/ksc64/sbin/kladduser -n "$WEB_USER" -p "$WEB_PASSWORD"
+}
+
+generate_web_config() {
+    log "Generating Web Console configuration..."
+    cat <<EOF > "$WEB_CONFIG_FILE"
+{
+  "address": "127.0.0.1",
+  "port": 8080,
+  "trusted": "127.0.0.1|13299|/var/opt/kaspersky/klnagent_srv/1093/cert/klserver.cer|KSC Server",
+  "acceptEula": true
+}
+EOF
+}
+
+download_and_install_web_console() {
+    log "Downloading and installing Web Console..."
+    wget -O "$WEB_DEB" "https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8952/english-25132578-en/313031343938397c44454c7c31/ksc-web-console-15.4.1021.x86_64.deb"
+    dpkg -i "$WEB_DEB"
+}
+
+main() {
+    check_root
+
+    read -s -p "🔐 Enter password for user 'ksc': " KSC_PASSWORD
+    echo
+    read -s -p "🔐 Enter password for PostgreSQL user 'ksc': " DB_PASSWORD
+    echo
+    read -p "👤 Enter Web Console admin username: " WEB_USER
+    read -s -p "🔐 Enter password for Web Console user '$WEB_USER': " WEB_PASSWORD
+    echo
+
+    create_users_and_groups
+    install_postgresql
+    optimize_postgresql
+    setup_database
+    generate_answers_file
+    download_and_install_ksc
+    create_web_user
+    generate_web_config
+    download_and_install_web_console
+
+    log "✅ Installation completed successfully."
+    log "🌐 Access Web Console at: https://127.0.0.1:8080"
+    log "👤 Login: $WEB_USER"
+}
+
+main
