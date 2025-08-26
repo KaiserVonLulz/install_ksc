@@ -117,6 +117,8 @@ fi
 echo "✅ Download completato."
 
 # Install dependencies first
+echo "sleep 120"
+sleep 120
 echo "📦 Installazione dipendenze..."
 apt install -f -y
 systemctl stop klactprx_srv 2>/dev/null
