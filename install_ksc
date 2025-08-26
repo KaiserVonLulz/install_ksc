@@ -19,64 +19,131 @@ else
 fi
 
 
-echo ""
-echo -e "${COL_BLUE}  .                                                ***                                               "
-echo -e "${COL_BLUE}    *************************:                     *******           **********************          "
-echo -e "${COL_BLUE}    **************************                   ***********         **********************          "
-echo -e "${COL_BLUE}    ***************************                :**********           **********************          "
-echo -e "${COL_BLUE}    ***************************+              **********             **********************          "
-echo -e "${COL_BLUE}                  :**********+              **********.              *******                         "
-echo -e "${COL_BLUE}                .**********+              **********+                *******                         "
-echo -e "${COL_BLUE}              .**********+              ***********                  *******                         "
-echo -e "${COL_BLUE}            .**********+              =**********                    *******                         "
-echo -e "${COL_BLUE}          .***********              .**********   *****              *******        ****-            "
-echo -e "${COL_BLUE}           **************          **********.    ********+          *******        ********         "
-echo -e "${COL_BLUE}           .***************       *********=      ***********        *******        **********.      "
-echo -e "${COL_BLUE}            +****************       ******        ************       *******        ************     "
-echo -e "${COL_BLUE}                   .**********        **             **********:                      .**********    "
-echo -e "${COL_BLUE}                      *********                         ********                         ********* . "
-echo -e "${COL_BLUE}                       ********                          ********                         =*******   "
-echo -e "${COL_BLUE}                        *******                          :*******                          *******+  "
-echo -e "${COL_BLUE}  *******               *******.   ********              .*******    *******               ********  "
-echo -e "${COL_BLUE}  *******+             .*******    -*******              ********   .********              *******.  "
-echo -e "${COL_BLUE}  ********=           .********     ********            ********:    =********            ********   "
-echo -e "${COL_BLUE}   *********.        *********      .*********        **********      *********=        *********    "
-echo -e "${COL_BLUE}    *************************        .*************************        *************************     "
-echo -e "${COL_BLUE}     ***********************           **********************.          :**********************      "
-echo -e "${COL_BLUE}       *******************               ******************:              -******************        "
-echo -e "${COL_BLUE}          +************                     ************-                    -************           "
-echo -e "${COL_BLUE}              .                                                                                     " 
-echo ""
-echo ""
-echo -e "${COL_WHITE}              ______ _                 _                                  _____ _______ "
-echo -e "${COL_WHITE}             |  ____| |               | |                                |_   _|__   __|"
-echo -e "${COL_WHITE}             | |__  | | _____   ____ _| |_ ___   _   _  ___  _   _ _ __    | |    | |   "
-echo -e "${COL_WHITE}             |  __| | |/ _ \ \ / / _` | __/ _ \ | | | |/ _ \| | | | '__|   | |    | |   "
-echo -e "${COL_WHITE}             | |____| |  __/\ V / (_| | | | __/ | |_| | (_) | |_| | |     _| |_   | |   "
-echo -e "${COL_WHITE}             |______|_|\___| \_/ \__,_|\__\___|  \__, |\___/ \__,_|_|    |_____|  |_|   "
-echo -e "${COL_WHITE}                                                  __/ |                                 "
-echo -e "${COL_WHITE}                                                 |___/                                  "
+echo -e "${COL_BLUE}"
+echo "  .                                                ***                                               "
+echo "    *************************:                     *******           **********************          "
+echo "    **************************                   ***********         **********************          "
+echo "    ***************************                :**********           **********************          "
+echo "    ***************************+              **********             **********************          "
+echo "                  :**********+              **********.              *******                         "
+echo "                .**********+              **********+                *******                         "
+echo "              .**********+              ***********                  *******                         "
+echo "            .**********+              =**********                    *******                         "
+echo "          .***********              .**********   *****              *******        ****-            "
+echo "           **************          **********.    ********+          *******        ********         "
+echo "           .***************       *********=      ***********        *******        **********.      "
+echo "            +****************       ******        ************       *******        ************     "
+echo "                   .**********        **             **********:                      .**********    "
+echo "                      *********                         ********                         ********* . "
+echo "                       ********                          ********                         =*******   "
+echo "                        *******                          :*******                          *******+  "
+echo "  *******               *******.   ********              .*******    *******               ********  "
+echo "  *******+             .*******    -*******              ********   .********              *******.  "
+echo "  ********=           .********     ********            ********:    =********            ********   "
+echo "   *********.        *********      .*********        **********      *********=        *********    "
+echo "    *************************        .*************************        *************************     "
+echo "     ***********************           **********************.          :**********************      "
+echo "       *******************               ******************:              -******************        "
+echo "          +************                     ************-                    -************           "
+echo "              .                                                                                      " 
 echo ""
 echo ""
+echo "              ______ _                 _                                  _____ _______ "
+echo "             |  ____| |               | |                                |_   _|__   __|"
+echo "             | |__  | | _____   ____ _| |_ ___   _   _  ___  _   _ _ __    | |    | |   "
+echo "             |  __| | |/ _ \ \ / / _` | __/ _ \ | | | |/ _ \| | | | '__|   | |    | |   "
+echo "             | |____| |  __/\ V / (_| | | | __/ | |_| | (_) | |_| | |     _| |_   | |   "
+echo "             |______|_|\___| \_/ \__,_|\__\___|  \__, |\___/ \__,_|_|    |_____|  |_|   "
+echo "                                                  __/ |                                 "
+echo "                                                 |___/                                  "
 echo ""
+echo ""
+echo -e "${COL_NC}"
+
+# Verifica che lo script sia eseguito come root
+if [ "$EUID" -ne 0 ]; then
+  echo "❌ Questo script deve essere eseguito come root."
+  exit 1
+fi
+
+echo "✅ Esecuzione come root confermata."
+
+
+echo -e "${COL_GREEN} ┌─────────────────────────────────┐"
+echo -e "${COL_GREEN} │ Aggiornamento Sistema Operativo │"
+echo -e "${COL_GREEN} └─────────────────────────────────┘"
+
+	sudo apt update && sudo apt upgrade
+
+echo -e "${COL_GREEN} ┌──────────────────────────┐"
+echo -e "${COL_GREEN} │ Installazione Postgresql │"
+echo -e "${COL_GREEN} └──────────────────────────┘"
+
+	apt install postgresql
+
+echo -e "${COL_GREEN} ┌──────────────────────────────────────────┐"
+echo -e "${COL_GREEN} │ Ottimizzazione configurazione Postgresql │"
+echo -e "${COL_GREEN} └──────────────────────────────────────────┘"
 
 
 
-echo -e "${COL_GREEN}
-echo -e "${COL_GREEN} *** Aggiornamento Sistema Operativo ***"
+echo -e "${COL_GREEN} ┌──────────────────────┐"
+echo -e "${COL_GREEN} │ Creazione Utente ksc │"
+echo -e "${COL_GREEN} └──────────────────────┘"
 
-sudo apt update
-sudo apt upgrade
+	sudo adduser ksc
+	sudo groupadd kladmins
+	sudo usermod -g kladmins ksc
 
-echo -e "${COL_GREEN} *** Installazione Postgresql ***"
+echo -e "${COL_GREEN} ┌─────────────────────────────┐"
+echo -e "${COL_GREEN} │ Creazione Utente Postgresql │"
+echo -e "${COL_GREEN} └─────────────────────────────┘"
 
+	sudo -u postgres psql -c "CREATE USER ksc WITH PASSWORD 'test' SUPERUSER;"
 
-echo -e "${COL_GREEN} *** Ottimizzazione configurazione Postgresql ***"
+echo -e "${COL_GREEN} ┌──────────────────┐"
+echo -e "${COL_GREEN} │ Creazione DB KAV │"
+echo -e "${COL_GREEN} └──────────────────┘"
 
-echo -e "${COL_GREEN} *** Creazione Utente ksc ***"
+	sudo -u ksc createdb KAV
 
-echo -e "${COL_GREEN} *** Creazione Utente Postgresql ***"
+echo -e "${COL_GREEN} ┌──────────────┐"
+echo -e "${COL_GREEN} │ Download KSC │"
+echo -e "${COL_GREEN} └──────────────┘"
 
-echo -e "${COL_GREEN} *** Creazione DB KAV ***"
+	wget -P /tmp/ https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8873/english-24733053-en/3939393939367c44454c7c31/ksc64_15.4.0-8873_amd64.deb
 
-echo -e "${COL_GREEN} *** Download KSC ***"
+echo -e "${COL_GREEN} ┌───────────────────┐"
+echo -e "${COL_GREEN} │ Installazione KSC │"
+echo -e "${COL_GREEN} └───────────────────┘"
+
+	sudo apt install /tmp/ksc64_15.4.0-8873_amd64.deb
+
+echo -e "${COL_GREEN} ┌────────────────────┐"
+echo -e "${COL_GREEN} │ Configurazione KSC │"
+echo -e "${COL_GREEN} └────────────────────┘"
+
+	sudo /opt/kaspersky/ksc64/lib/bin/setup/postinstall.pl
+	
+	
+	
+	
+	# Define the file path
+FILE_PATH="/etc/ksc-web-console-setup.json"
+
+# Use a here document to create the file with the specified content
+cat << EOF | sudo tee "$FILE_PATH" > /dev/null
+{
+ "address": "127.0.0.1",
+ "port": 8080,
+ "trusted": "127.0.0.1|13299|/var/opt/kaspersky/klnagent_srv/1093/cert/klserver.cer|KSC Server",
+ "acceptEula": true
+}
+EOF
+
+echo "File $FILE_PATH creato con successo."
+
+wget -P /tmp/ https://products.s.kaspersky-labs.com/administrationkit/ksc10/15.4.0.8952/english-25132578-en/313031343938397c44454c7c31/ksc-web-console-15.4.1021.x86_64.deb
+
+sudo dpkg -i /tmp/ksc-web-console-15.4.1021.x86_64.deb
+
